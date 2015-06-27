@@ -63,4 +63,5 @@ public:
 	afx_msg void OnEnChangeEditStartNumber();
 	afx_msg void OnNMRclickListRenamer(NMHDR *pNMHDR, LRESULT *pResult);
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+//	afx_msg void OnEnChangeEditMessage();
 };

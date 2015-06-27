@@ -89,6 +89,7 @@ BEGIN_MESSAGE_MAP(CRenamerDlg, CDialog)
 	ON_NOTIFY(NM_RCLICK, IDC_LIST_RENAMER, OnNMRclickListRenamer)
 	ON_COMMAND(ID_DELETE, OnDelete)	
 	ON_EN_CHANGE(IDC_EDIT_START_NUMBER, &CRenamerDlg::OnEnChangeEditStartNumber)
+//	ON_EN_CHANGE(IDC_EDIT_MESSAGE, &CRenamerDlg::OnEnChangeEditMessage)
 END_MESSAGE_MAP()
 
 
@@ -132,10 +133,10 @@ BOOL CRenamerDlg::OnInitDialog()
 	m_listCtrl.SetBkColor(RGB(0xe0, 0xff, 0xff));
 	m_listCtrl.SetTextBkColor(RGB(0xe0, 0xff, 0xff));
 	m_listCtrl.SetExtendedStyle( LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_SUBITEMIMAGES);
-	m_listCtrl.InsertColumn(0, "전체 경로", LVCFMT_LEFT, 0, -1);
-	m_listCtrl.InsertColumn(1, "상위 경로", LVCFMT_LEFT, 0, -1);
-	m_listCtrl.InsertColumn(2, "원본 파일명", LVCFMT_LEFT, 200, -1);
-	m_listCtrl.InsertColumn(3, "변경 후 파일명", LVCFMT_LEFT, 200, -1);
+	m_listCtrl.InsertColumn(0, _T("전체 경로"), LVCFMT_LEFT, 0, -1);
+	m_listCtrl.InsertColumn(1, _T("상위 경로"), LVCFMT_LEFT, 0, -1);
+	m_listCtrl.InsertColumn(2, _T("원본 파일명"), LVCFMT_LEFT, 200, -1);
+	m_listCtrl.InsertColumn(3, _T("변경 후 파일명"), LVCFMT_LEFT, 200, -1);
 	
 	// StartNumber
 	GetDlgItem(IDC_EDIT_START_NUMBER)->EnableWindow(FALSE);
@@ -208,26 +209,29 @@ void CRenamerDlg::OnEnChangeEditRename()
 		nTotalCnt = 1;
 
 	int nLength = 0;		// 각각의 일련번호 자릿수
-	char ext[32];			// 파일확장자 저장
+	//char ext[32];			// 파일확장자 저장
+	wchar_t ext[32];			// 파일확장자 저장
+	
 
 
 	// 리스트컨트롤에 있는 모든 데이터에 대해 반복...
 	for(int i=0; i<m_listCtrl.GetItemCount(); i++)
 	{
 		// 변경할 파일명의 길이만큼 반복...
-		// 기본 로직은 일반 문자열과 일련번호인 #을 구분해서 
+		// 기본 로직은 일반 문자열과 일련번호인 *을 구분해서 
 		// strResult에 계속 저장...
 		for(int j=0; j<strData.GetLength(); j++)
 		{
-			// 한 문자씩 불러와서 # 문자인지 여부 판단
-			// # 문자인경우 연속적으로 몇개 붙어있는지 판단
+			// 한 문자씩 불러와서 * 문자인지 여부 판단
+			// * 문자인경우 연속적으로 몇개 붙어있는지 판단
 			// 연속적으로 붙어있는 갯수가 곧 일련번호의 자리수
-			// 예 Test ### -> Test 001
-			if(strData.GetAt(j) == '#')
+			// 예 Test *** -> Test 001
+
+			if(strData.GetAt(j) == _T('*'))
 			{
-				while(strData.GetAt(j) == '#')
+				while(strData.GetAt(j) == _T('*'))
 				{
-					nLength++;	// #문자 갯수 증가
+					nLength++;	// *문자 갯수 증가
 					j++;		// 연속된 문자 판단위해 다음 문자로 이동
 				}
 				// while문 내에서 j값을 통해 다음 문자로 이동후에 비교를 하므로...
@@ -237,7 +241,7 @@ void CRenamerDlg::OnEnChangeEditRename()
 				j--;
 
 				// 일련번호 완성
-				strTmp.Format("%0*d", nLength, nTotalCnt);
+				strTmp.Format(_T("%0*d"), nLength, nTotalCnt);
 				nLength=0;
 
 				// strResult에 일련번호 데이터 추가
@@ -255,7 +259,12 @@ void CRenamerDlg::OnEnChangeEditRename()
 		// 이 정보 이용 각 파일의 확장자를 얻어올 수 있음...
 		// 위에서 얻은 변경할 파일명과 원본 파일의 확장자를 합쳐서...
 		// 변경할 파일명 최종 완성
-		_splitpath_s(m_listCtrl.GetItemText(i, 0), 
+
+		/*_splitpath_s(m_listCtrl.GetItemText(i, 0), 
+			NULL, NULL,		NULL, NULL,		NULL, NULL,
+			ext, sizeof(ext));*/
+
+		_wsplitpath_s(m_listCtrl.GetItemText(i, 0), 
 			NULL, NULL,		NULL, NULL,		NULL, NULL,
 			ext, sizeof(ext));
 
@@ -303,17 +312,18 @@ UINT ThreadRename(LPVOID pParam)
 		// 경로와 파일을 구분짓는 "\" 문자 추가
 		// 3번 칼럼의 데이터 : 변경될 파일명 추가
 		strNewName = dlg->m_listCtrl.GetItemText(i, 1);
-		strNewName += "\\";
+		strNewName += _T("\\");
 		strNewName += dlg->m_listCtrl.GetItemText(i, 3);
 
 		dlg->m_listCtrl.SetItem(i, 0, LVIF_TEXT, strNewName, NULL, NULL, NULL, NULL);
-		result = rename(strOldName, strNewName);
+		// result = rename(strOldName, strNewName);
+		result = _wrename(strOldName, strNewName);
 
 		dlg->m_prgsTime.SetPos(i);
 	}
 	dlg->m_prgsTime.SetPos(i);
 
-	dlg->m_strMessage = "파일명 변경 완료...";
+	dlg->m_strMessage = _T("파일명 변경 완료...");
 	dlg->UpdateData(FALSE);
 	return 0;
 }
@@ -323,9 +333,9 @@ void CRenamerDlg::OnBtnRename()
 	UpdateData(TRUE);
 
 	if(m_strRename.IsEmpty())
-		MessageBox("변경할 파일명을 입력하세요.", "오류");
-	else if(m_strRename.Find("#") == -1)
-		MessageBox("한개 이상의 일련번호를 입력하세요.", "오류");
+		MessageBox(_T("변경할 파일명을 입력하세요."), _T("오류"));
+	else if(m_strRename.Find(_T("*")) == -1)
+		MessageBox(_T("한개 이상의 일련번호를 입력하세요."), _T("오류"));
 	else
 	{
 		// CWinThread *pThread = ::AfxBeginThread(ThreadFunc, this);
@@ -335,7 +345,7 @@ void CRenamerDlg::OnBtnRename()
 
 void CRenamerDlg::OnBtnOrgName()
 {
-	if(MessageBox("최초 파일명으로 변경하시겠습니까?", "원본명으로...", MB_YESNO) == IDYES)
+	if(MessageBox(_T("최초 파일명으로 변경하시겠습니까?"), _T("원본명으로..."), MB_YESNO) == IDYES)
 	{
 		for(int i=0; i<m_listCtrl.GetItemCount(); i++)
 		{		
@@ -357,14 +367,14 @@ void CRenamerDlg::OnBtnDelete()
 		m_listCtrl.DeleteItem(nIndex);
 		m_listCtrl.nDataCnt--;
 
-		m_strMessage = "선택한 목록 제거 완료...";
+		m_strMessage = _T("선택한 목록 제거 완료...");
 		UpdateData(FALSE);
 	}
 
 	if(m_listCtrl.nDataCnt <= 0)
 	{
 		OnBtnAllReset();
-		m_strMessage = "목록에 자료가 없어서 모든 데이터 초기화...";
+		m_strMessage = _T("목록에 자료가 없어서 모든 데이터 초기화...");
 		UpdateData(FALSE);
 	}
 }
@@ -391,7 +401,7 @@ void CRenamerDlg::OnBtnAllReset()
 	m_listCtrl.DeleteAllItems();
 	m_listCtrl.nDataCnt = 0;
 	m_strRename.Empty();
-	m_strMessage = "모든 데이터 초기화 완료...";
+	m_strMessage = _T("모든 데이터 초기화 완료...");
 	UpdateData(FALSE);
 }
 
@@ -436,3 +446,4 @@ BOOL CRenamerDlg::PreTranslateMessage(MSG* pMsg)
 
 	return CDialog::PreTranslateMessage(pMsg);
 }
+

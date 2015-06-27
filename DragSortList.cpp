@@ -44,7 +44,8 @@ UINT AddDragData(LPVOID pParam)
 	CDragSortList* m_list = param->m_list;
 	CRenamerDlg* pDlg = param->pDlg;
 
-	CHAR		szPath[1024];		// Drag & Drop 된 파일 경로
+	//CHAR		szPath[1024];		// Drag & Drop 된 파일 경로
+	WCHAR		szPath[1024];		// Drag & Drop 된 파일 경로
 	UINT		uiFileNum;			// Drag & Drop 된 파일 갯수
 	CString		strItem;			// 목록내 아이템명 얻어올 때
 	BOOL		bExist = FALSE;		// Drag & Drop 한 파일이 기존 목록에 있는지 유무
@@ -62,7 +63,7 @@ UINT AddDragData(LPVOID pParam)
 	SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	// 얻어온 파일 정보 리스트 컨트롤에 추가
-	pDlg->m_strMessage = "파일추가 중...";
+	pDlg->m_strMessage = _T("파일추가 중...");
 	pDlg->UpdateData(FALSE);
 	UINT i = 0 ;
 	for(i = 0 ; i < uiFileNum ; i++ )
@@ -77,7 +78,7 @@ UINT AddDragData(LPVOID pParam)
 		bExist = FALSE;
 		if(m_list->FindItem(&info) > -1)
 		{
-			pDlg->m_strMessage.Format("목록에 \"%s\"는(은) 이미 존재합니다.", szPath);
+			pDlg->m_strMessage.Format(_T("목록에 \"%s\"는(은) 이미 존재합니다."), szPath);
 			pDlg->UpdateData(FALSE);
 
 			bExist = TRUE;
@@ -103,7 +104,7 @@ UINT AddDragData(LPVOID pParam)
 			}
 			else
 			{
-				pDlg->m_strMessage = "폴더는 목록에 추가되지 않습니다.";
+				pDlg->m_strMessage = _T("폴더는 목록에 추가되지 않습니다.");
 				pDlg->UpdateData(FALSE);
 			}
 			
@@ -121,7 +122,7 @@ UINT AddDragData(LPVOID pParam)
 	}
 
 	SetCursor(LoadCursor(NULL, IDC_ARROW));
-	pDlg->m_strMessage = "파일 추가 완료...";
+	pDlg->m_strMessage = _T("파일 추가 완료...");
 	pDlg->UpdateData(FALSE);
 
 	delete param;

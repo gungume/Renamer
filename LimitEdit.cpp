@@ -30,7 +30,7 @@ END_MESSAGE_MAP()
 void CLimitEdit::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// 파일명 부적합 문자입력 차단
-	if(nChar == '\\' || nChar == '/' || nChar == ':' || nChar == '*' || nChar == '?' || nChar == '"' || nChar == '<' || nChar == '>' || nChar == '|')
+	if(nChar == '\\' || nChar == '/' || nChar == ':' || nChar == '?' || nChar == '"' || nChar == '<' || nChar == '>' || nChar == '|')
 	{
 		return;
 	}

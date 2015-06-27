@@ -78,8 +78,9 @@ FONT 9, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
     LTEXT           "Renamer Version 1.0",IDC_STATIC,40,10,119,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2006",IDC_STATIC,40,25,119,8
+    LTEXT           "Copyright (C) 2008",IDC_STATIC,40,27,61,8
     DEFPUSHBUTTON   "확인",IDOK,178,7,50,16,WS_GROUP
+    LTEXT           "http://www.gungume.com",IDC_STATIC,105,27,87,8
 END
 
 IDD_RENAMER_DIALOG DIALOGEX 0, 0, 431, 226
@@ -94,11 +95,11 @@ BEGIN
     PUSHBUTTON      "선택된 목록 제거",IDC_BUTTON_DELETE,282,126,64,14
     PUSHBUTTON      "모든 데이터 초기화",IDC_BUTTON_ALL_RESET,352,126,64,14
     CONTROL         "",IDC_LIST_RENAMER,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,15,20,241,120,WS_EX_ACCEPTFILES
-    CONTROL         "",IDC_PROGRESS_TIME,"msctls_progress32",WS_BORDER | 0x1,40,174,370,14
+    CONTROL         "",IDC_PROGRESS_TIME,"msctls_progress32",PBS_SMOOTH | WS_BORDER,40,174,370,14
     EDITTEXT        IDC_EDIT_MESSAGE,40,196,370,14,ES_AUTOHSCROLL | ES_READONLY
     GROUPBOX        "변경할 파일을 끌어다 놓으세요 (파일만 가능)",IDC_STATIC,7,7,258,142
-    GROUPBOX        "바꿀 파일명 입력 (일련번호 : #)",IDC_STATIC,277,7,147,78
-    LTEXT           "입력 예 : Test_###",IDC_STATIC,285,20,64,8
+    GROUPBOX        "바꿀 파일명 입력 (일련번호 : *)",IDC_STATIC,277,7,147,78
+    LTEXT           "입력 예 : Test_***",IDC_STATIC,285,20,61,8
     LTEXT           "결    과 : Test.jpg -> Test_001.jpg",IDC_STATIC,285,31,111,8
     GROUPBOX        "프로그램 상태",IDC_STATIC,7,159,417,60
     LTEXT           "메시지",IDC_STATIC,15,198,22,8
@@ -131,19 +132,19 @@ BEGIN
     BEGIN
         BLOCK "041203b5"
         BEGIN
-            VALUE "CompanyName", "TODO: <회사 이름>"
-            VALUE "FileDescription", "TODO: <파일 설명>"
+            VALUE "CompanyName", "Gungume.com"
+            VALUE "FileDescription", "파일명 일괄변경 프로그램"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Renamer.exe"
-            VALUE "LegalCopyright", "TODO: (c) <회사 이름>.  All rights reserved."
+            VALUE "LegalCopyright", "(c) Gungume.com.  All rights reserved."
             VALUE "OriginalFilename", "Renamer.exe"
-            VALUE "ProductName", "TODO: <제품 이름>"
+            VALUE "ProductName", "파일명 일괄변경 프로그램"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "변환", 0x412, 949
+        VALUE "Translation", 0x412, 949
     END
 END
 

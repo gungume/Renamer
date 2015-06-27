@@ -40,7 +40,7 @@
 #include <afxcmn.h>			// Windows 공용 컨트롤에 대한 MFC 지원
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
-#ifndef _UNICODE
+#ifdef _UNICODE
 #if defined _M_IX86
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #elif defined _M_IA64
