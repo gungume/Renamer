@@ -279,6 +279,45 @@ void CRenamerDlg::OnEnChangeEditStartNumber()
 	}
 }
 
+
+
+UINT ThreadRename(LPVOID pParam)
+{
+	CRenamerDlg *dlg = (CRenamerDlg *)pParam;
+	CString strOldName, strNewName;
+
+	dlg->m_prgsTime.SetRange(0, dlg->m_listCtrl.GetItemCount());
+	dlg->m_prgsTime.SetPos(0);
+
+	dlg->m_strMessage.Empty();
+	dlg->UpdateData(FALSE);
+	int result;
+	int i=0;
+	for(i=0; i<dlg->m_listCtrl.GetItemCount(); i++)
+	{
+		// 원본 파일명 : 0번 칼럼에 있는 데이터
+		strOldName = dlg->m_listCtrl.GetItemText(i, 0);
+
+		// - 변경될 파일명 -
+		// 1번 칼럼의 데이터 : 원본 파일의 파일명을 제외한 절대경로
+		// 경로와 파일을 구분짓는 "\" 문자 추가
+		// 3번 칼럼의 데이터 : 변경될 파일명 추가
+		strNewName = dlg->m_listCtrl.GetItemText(i, 1);
+		strNewName += "\\";
+		strNewName += dlg->m_listCtrl.GetItemText(i, 3);
+
+		dlg->m_listCtrl.SetItem(i, 0, LVIF_TEXT, strNewName, NULL, NULL, NULL, NULL);
+		result = rename(strOldName, strNewName);
+
+		dlg->m_prgsTime.SetPos(i);
+	}
+	dlg->m_prgsTime.SetPos(i);
+
+	dlg->m_strMessage = "파일명 변경 완료...";
+	dlg->UpdateData(FALSE);
+	return 0;
+}
+
 void CRenamerDlg::OnBtnRename()
 {
 	UpdateData(TRUE);
@@ -288,7 +327,10 @@ void CRenamerDlg::OnBtnRename()
 	else if(m_strRename.Find("#") == -1)
 		MessageBox("한개 이상의 일련번호를 입력하세요.", "오류");
 	else
-		RunRename();
+	{
+		// CWinThread *pThread = ::AfxBeginThread(ThreadFunc, this);
+		AfxBeginThread(ThreadRename, this);
+	}
 }
 
 void CRenamerDlg::OnBtnOrgName()
@@ -302,7 +344,7 @@ void CRenamerDlg::OnBtnOrgName()
 		m_strRename.Empty();
 		UpdateData(FALSE);
 
-		RunRename();
+		// RunRename();
 	}
 }
 
@@ -330,41 +372,6 @@ void CRenamerDlg::OnBtnDelete()
 void CRenamerDlg::OnDelete()
 {
 	OnBtnDelete();
-}
-
-void CRenamerDlg::RunRename(void)
-{
-	CString strOldName, strNewName;
-
-	m_prgsTime.SetRange(0, m_listCtrl.GetItemCount());
-	m_prgsTime.SetPos(0);
-
-	m_strMessage.Empty();
-	UpdateData(FALSE);
-	int result;
-	int i=0;
-	for(i=0; i<m_listCtrl.GetItemCount(); i++)
-	{
-		// 원본 파일명 : 0번 칼럼에 있는 데이터
-		strOldName = m_listCtrl.GetItemText(i, 0);
-
-		// - 변경될 파일명 -
-		// 1번 칼럼의 데이터 : 원본 파일의 파일명을 제외한 절대경로
-		// 경로와 파일을 구분짓는 "\" 문자 추가
-		// 3번 칼럼의 데이터 : 변경될 파일명 추가
-		strNewName = m_listCtrl.GetItemText(i, 1);
-		strNewName += "\\";
-		strNewName += m_listCtrl.GetItemText(i, 3);
-
-		m_listCtrl.SetItem(i, 0, LVIF_TEXT, strNewName, NULL, NULL, NULL, NULL);
-		result = rename(strOldName, strNewName);
-
-		m_prgsTime.SetPos(i);
-	}
-	m_prgsTime.SetPos(i);
-
-	m_strMessage = "파일명 변경 완료...";
-	UpdateData(FALSE);
 }
 
 void CRenamerDlg::OnBtnAllReset()

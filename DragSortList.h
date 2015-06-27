@@ -20,8 +20,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	int nDataCnt;
-	CImageList *m_SmallImage;
-	HIMAGELIST hSystemSmall;
 	BOOL m_bAscend;
 
 	afx_msg void OnDropFiles(HDROP hDropInfo);

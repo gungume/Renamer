@@ -35,6 +35,7 @@ protected:
 public:
 	// 멤버변수
 	CDragSortList	m_listCtrl;		// Drag & Drop 가능 ListControl
+	// CListCtrl		m_listCtrl;		// Drag & Drop 가능 ListControl
 	CLimitEdit		m_ctrlEdit;		// 입력제한 EditControl
 	CProgressCtrl	m_prgsTime;		// 프로그램 진행률
 	CString			m_strRename;	// 파일명 변경
@@ -62,5 +63,4 @@ public:
 	afx_msg void OnEnChangeEditStartNumber();
 	afx_msg void OnNMRclickListRenamer(NMHDR *pNMHDR, LRESULT *pResult);
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
-	void RunRename(void);					// 파일명 변경실행
 };
