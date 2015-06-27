@@ -50,6 +50,8 @@ CRenamerDlg::CRenamerDlg(CWnd* pParent /*=NULL*/)
 : CDialog(CRenamerDlg::IDD, pParent)
 , m_strMessage(_T(""))
 , m_strRename(_T(""))
+, m_nStartNumber(1)
+, m_bStartNumber(FALSE)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -58,14 +60,19 @@ void CRenamerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_RENAMER, m_listCtrl);
-	DDX_Text(pDX, IDC_EDIT_MESSAGE, m_strMessage);
-	DDX_Text(pDX, IDC_EDIT_RENAME, m_strRename);
 	DDX_Control(pDX, IDC_PROGRESS_TIME, m_prgsTime);
-
 	DDX_Control(pDX, IDC_BUTTON_RENAME, m_btnRename);
 	DDX_Control(pDX, IDC_BUTTON_ORG_NAME, m_btnOrgName);
 	DDX_Control(pDX, IDC_BUTTON_DELETE, m_btnDataDelete);
 	DDX_Control(pDX, IDC_BUTTON_ALL_RESET, m_btnDataReset);
+	DDX_Control(pDX, IDC_EDIT_RENAME, m_ctrlEdit);
+
+	DDX_Text(pDX, IDC_EDIT_MESSAGE, m_strMessage);
+	DDX_Text(pDX, IDC_EDIT_RENAME, m_strRename);
+	DDX_Text(pDX, IDC_EDIT_START_NUMBER, m_nStartNumber);
+	
+	DDX_Check(pDX, IDC_CHECK_START_NUMBER, m_bStartNumber);
+	DDV_MinMaxInt(pDX, m_nStartNumber, 0, 2147483640);
 }
 
 BEGIN_MESSAGE_MAP(CRenamerDlg, CDialog)
@@ -74,12 +81,14 @@ BEGIN_MESSAGE_MAP(CRenamerDlg, CDialog)
 	ON_WM_QUERYDRAGICON()
 	//}}AFX_MSG_MAP
 	ON_EN_CHANGE(IDC_EDIT_RENAME, OnEnChangeEditRename)
-	ON_BN_CLICKED(IDC_BUTTON_RENAME, OnBnClickedButtonRename)
-	ON_BN_CLICKED(IDC_BUTTON_ALL_RESET, OnBnClickedButtonAllReset)
-	ON_BN_CLICKED(IDC_BUTTON_DELETE, OnBnClickedButtonDelete)
-	ON_BN_CLICKED(IDC_BUTTON_ORG_NAME, OnBnClickedButtonOrgName)
+	ON_BN_CLICKED(IDC_BUTTON_RENAME, OnBtnRename)
+	ON_BN_CLICKED(IDC_BUTTON_ALL_RESET, OnBtnAllReset)
+	ON_BN_CLICKED(IDC_BUTTON_DELETE, OnBtnDelete)
+	ON_BN_CLICKED(IDC_BUTTON_ORG_NAME, OnBtnOrgName)
+	ON_BN_CLICKED(IDC_CHECK_START_NUMBER, &CRenamerDlg::OnBnCheckStartNumber)
 	ON_NOTIFY(NM_RCLICK, IDC_LIST_RENAMER, OnNMRclickListRenamer)
-	ON_COMMAND(ID_DELETE, OnDelete)
+	ON_COMMAND(ID_DELETE, OnDelete)	
+	ON_EN_CHANGE(IDC_EDIT_START_NUMBER, &CRenamerDlg::OnEnChangeEditStartNumber)
 END_MESSAGE_MAP()
 
 
@@ -113,20 +122,13 @@ BOOL CRenamerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	// 버튼 초기화
-	// XP-Style 버튼
-	m_btnRename.SetThemeHelper(&m_ThemeHelper);
-	m_btnOrgName.SetThemeHelper(&m_ThemeHelper);
-	m_btnDataDelete.SetThemeHelper(&m_ThemeHelper);
-	m_btnDataReset.SetThemeHelper(&m_ThemeHelper);
-
-	// 버튼 비활성화
+	// Button
 	m_btnRename.EnableWindow(FALSE);
 	m_btnOrgName.EnableWindow(FALSE);
 	m_btnDataDelete.EnableWindow(FALSE);
 	m_btnDataReset.EnableWindow(FALSE);
 
-    // 리스트컨트롤 초기화
+    // ListControl
 	m_listCtrl.SetBkColor(RGB(0xe0, 0xff, 0xff));
 	m_listCtrl.SetTextBkColor(RGB(0xe0, 0xff, 0xff));
 	m_listCtrl.SetExtendedStyle( LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_SUBITEMIMAGES);
@@ -135,6 +137,9 @@ BOOL CRenamerDlg::OnInitDialog()
 	m_listCtrl.InsertColumn(2, "원본 파일명", LVCFMT_LEFT, 200, -1);
 	m_listCtrl.InsertColumn(3, "변경 후 파일명", LVCFMT_LEFT, 200, -1);
 	
+	// StartNumber
+	GetDlgItem(IDC_EDIT_START_NUMBER)->EnableWindow(FALSE);
+
 	return TRUE;  // 컨트롤에 대한 포커스를 설정하지 않을 경우 TRUE를 반환합니다.
 }
 
@@ -189,21 +194,21 @@ HCURSOR CRenamerDlg::OnQueryDragIcon()
 
 void CRenamerDlg::OnEnChangeEditRename()
 {
-	// TODO:  RICHEDIT 컨트롤인 경우 이 컨트롤은
-	// CDialog::마스크에 OR 연산하여 설정된 ENM_CHANGE 플래그를 지정하여
-	// CRichEditCtrl().SetEventMask()를 호출하도록 OnInitDialog() 함수를 재지정하지 않으면
-	// 이 알림을 보내지 않습니다.
-
-	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	// 입력한 형식데로 파일명 변경...일련번호 포함
+	// 입력한 형식으로 파일명 변경...일련번호 포함
 	UpdateData(TRUE);
-	CString strData = m_strRename;	// 사용자가 입력한 변경할 파일명
-	CString strTmp = _T("");		// 파일명 변경에 필요한 임시 변수
-	CString strResult = _T("");		// 최종적으로 변경할 파일명
+	CString strData = m_strRename;	// 사용자 입력형식
+	CString strTmp = _T("");		// 일련번호 생성에 따른 임시 변수
+	CString strResult = _T("");		// 최종결과
 
-	int nTotalCnt = 1;		// 일련번호 카운터
+	// 일련번호 카운터
+	int nTotalCnt;
+	if(m_bStartNumber == TRUE)
+		nTotalCnt = m_nStartNumber;
+	else if(m_bStartNumber == FALSE)
+		nTotalCnt = 1;
+
 	int nLength = 0;		// 각각의 일련번호 자릿수
-	char ext[32];			// 파일경로에서 확장자만 따로 저장
+	char ext[32];			// 파일확장자 저장
 
 
 	// 리스트컨트롤에 있는 모든 데이터에 대해 반복...
@@ -230,7 +235,7 @@ void CRenamerDlg::OnEnChangeEditRename()
 				// 다음, 다음 문자로 이동하므르로 문자 하나가 비교가 안되기에
 				// j값 1 감소시킴
 				j--;
-				
+
 				// 일련번호 완성
 				strTmp.Format("%0*d", nLength, nTotalCnt);
 				nLength=0;
@@ -250,39 +255,44 @@ void CRenamerDlg::OnEnChangeEditRename()
 		// 이 정보 이용 각 파일의 확장자를 얻어올 수 있음...
 		// 위에서 얻은 변경할 파일명과 원본 파일의 확장자를 합쳐서...
 		// 변경할 파일명 최종 완성
-		_splitpath(m_listCtrl.GetItemText(i, 0), NULL, NULL, NULL, ext);
+		_splitpath_s(m_listCtrl.GetItemText(i, 0), 
+			NULL, NULL,		NULL, NULL,		NULL, NULL,
+			ext, sizeof(ext));
+
 		strResult+=ext;
 
 		// 변경할 파일명을 3번 칼럼에 삽입
 		m_listCtrl.SetItem(i, 3, LVIF_TEXT, strResult, NULL, NULL, NULL, NULL);
-		
+
 		strResult.Empty();
 		nTotalCnt++;
 	}
 }
-void CRenamerDlg::OnBnClickedButtonRename()
+
+void CRenamerDlg::OnEnChangeEditStartNumber()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// 시작번호 입력시 즉각반영
+	UpdateData(TRUE);
+	if(!m_strRename.IsEmpty())
+	{
+		OnEnChangeEditRename();
+	}
+}
+
+void CRenamerDlg::OnBtnRename()
+{
 	UpdateData(TRUE);
 
 	if(m_strRename.IsEmpty())
-	{
 		MessageBox("변경할 파일명을 입력하세요.", "오류");
-	}
 	else if(m_strRename.Find("#") == -1)
-	{
 		MessageBox("한개 이상의 일련번호를 입력하세요.", "오류");
-	}
 	else
-	{
 		RunRename();
-	}
-	
 }
 
-void CRenamerDlg::OnBnClickedButtonOrgName()
+void CRenamerDlg::OnBtnOrgName()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	if(MessageBox("최초 파일명으로 변경하시겠습니까?", "원본명으로...", MB_YESNO) == IDYES)
 	{
 		for(int i=0; i<m_listCtrl.GetItemCount(); i++)
@@ -296,6 +306,32 @@ void CRenamerDlg::OnBnClickedButtonOrgName()
 	}
 }
 
+void CRenamerDlg::OnBtnDelete()
+{
+	POSITION pos;
+	while ( pos = m_listCtrl.GetFirstSelectedItemPosition() )
+	{
+		int nIndex = m_listCtrl.GetNextSelectedItem(pos);
+		m_listCtrl.DeleteItem(nIndex);
+		m_listCtrl.nDataCnt--;
+
+		m_strMessage = "선택한 목록 제거 완료...";
+		UpdateData(FALSE);
+	}
+
+	if(m_listCtrl.nDataCnt <= 0)
+	{
+		OnBtnAllReset();
+		m_strMessage = "목록에 자료가 없어서 모든 데이터 초기화...";
+		UpdateData(FALSE);
+	}
+}
+
+void CRenamerDlg::OnDelete()
+{
+	OnBtnDelete();
+}
+
 void CRenamerDlg::RunRename(void)
 {
 	CString strOldName, strNewName;
@@ -306,7 +342,8 @@ void CRenamerDlg::RunRename(void)
 	m_strMessage.Empty();
 	UpdateData(FALSE);
 	int result;
-	for(int i=0; i<m_listCtrl.GetItemCount(); i++)
+	int i=0;
+	for(i=0; i<m_listCtrl.GetItemCount(); i++)
 	{
 		// 원본 파일명 : 0번 칼럼에 있는 데이터
 		strOldName = m_listCtrl.GetItemText(i, 0);
@@ -323,30 +360,25 @@ void CRenamerDlg::RunRename(void)
 		result = rename(strOldName, strNewName);
 
 		m_prgsTime.SetPos(i);
-		Sleep(10);
 	}
 	m_prgsTime.SetPos(i);
 
 	m_strMessage = "파일명 변경 완료...";
 	UpdateData(FALSE);
-
-	
-	/*
-	TRACE("Result : %d\n", result);
-	TRACE("Errno : %d\n", errno);
-	TRACE("Old Name : %s\n", strOldName);
-	TRACE("New Name : %s\n\n", strNewName);
-	*/
 }
 
-void CRenamerDlg::OnBnClickedButtonAllReset()
+void CRenamerDlg::OnBtnAllReset()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	// 버튼 비활성화
 	m_btnRename.EnableWindow(FALSE);
 	m_btnOrgName.EnableWindow(FALSE);
 	m_btnDataDelete.EnableWindow(FALSE);
 	m_btnDataReset.EnableWindow(FALSE);
+
+	// 일련번호 초기값
+	m_bStartNumber = FALSE;
+	m_nStartNumber = 1;
+	GetDlgItem(IDC_EDIT_START_NUMBER)->EnableWindow(FALSE);
 
 	m_prgsTime.SetPos(0);
 	m_listCtrl.DeleteAllItems();
@@ -355,33 +387,6 @@ void CRenamerDlg::OnBnClickedButtonAllReset()
 	m_strMessage = "모든 데이터 초기화 완료...";
 	UpdateData(FALSE);
 }
-
-void CRenamerDlg::OnBnClickedButtonDelete()
-{
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	
-	POSITION pos;
-	while ( pos = m_listCtrl.GetFirstSelectedItemPosition() )
-	{
-		int nIndex = m_listCtrl.GetNextSelectedItem(pos);
-		m_listCtrl.DeleteItem(nIndex);
-		m_listCtrl.nDataCnt--;
-
-		m_strMessage = "선택한 목록 제거 완료...";
-		UpdateData(FALSE);
-	}
-	
-
-	if(m_listCtrl.nDataCnt <= 0)
-	{
-		OnBnClickedButtonAllReset();
-		m_strMessage = "목록에 자료가 없어서 모든 데이터 초기화...";
-		UpdateData(FALSE);
-	}
-
-}
-
-
 
 void CRenamerDlg::OnNMRclickListRenamer(NMHDR *pNMHDR, LRESULT *pResult)
 {
@@ -401,21 +406,26 @@ void CRenamerDlg::OnNMRclickListRenamer(NMHDR *pNMHDR, LRESULT *pResult)
 	*pResult = 0;
 }
 
-void CRenamerDlg::OnDelete()
+void CRenamerDlg::OnBnCheckStartNumber()
 {
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	OnBnClickedButtonDelete();
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData(TRUE);
+
+	if(m_bStartNumber == TRUE)
+		GetDlgItem(IDC_EDIT_START_NUMBER)->EnableWindow(TRUE);
+	else if(m_bStartNumber == FALSE)
+		GetDlgItem(IDC_EDIT_START_NUMBER)->EnableWindow(FALSE);
+	
+	OnEnChangeEditRename();
 }
 
 BOOL CRenamerDlg::PreTranslateMessage(MSG* pMsg)
 {
-	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-
-	if(pMsg->wParam == '\\' || pMsg->wParam == '/' || pMsg->wParam == ':' || pMsg->wParam == '*' || pMsg->wParam == '?' || pMsg->wParam == '"' || pMsg->wParam == '<' || pMsg->wParam == '>' || pMsg->wParam == '|')
-		return FALSE;
-		
-	if(pMsg->wParam == VK_RETURN || pMsg->wParam == VK_ESCAPE)
-		return FALSE;
+	if(pMsg->message == WM_KEYDOWN)
+	{ 
+		if(pMsg->wParam == VK_RETURN || pMsg->wParam == VK_ESCAPE)
+			return FALSE;
+	}
 
 	return CDialog::PreTranslateMessage(pMsg);
 }

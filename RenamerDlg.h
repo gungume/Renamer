@@ -4,9 +4,10 @@
 #pragma once
 #include "afxcmn.h"
 
-#include "DragList.h"
-#include "./BtnClass/XPStyleButtonST.h"
-#include "./BtnClass/ThemeHelperST.h"
+#include "DragSortList.h"
+#include "LimitEdit.h"
+#include "afxwin.h"
+
 // CRenamerDlg 대화 상자
 class CRenamerDlg : public CDialog
 {
@@ -33,27 +34,33 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	// 멤버변수
-	CDragList		m_listCtrl;		// Drag & Drop 가능 리스트컨트롤
+	CDragSortList	m_listCtrl;		// Drag & Drop 가능 ListControl
+	CLimitEdit		m_ctrlEdit;		// 입력제한 EditControl
 	CProgressCtrl	m_prgsTime;		// 프로그램 진행률
 	CString			m_strRename;	// 파일명 변경
 	CString			m_strMessage;	// 각종 메시지
 	
-	// XP스타일 버튼
-	CXPStyleButtonST	m_btnRename;
-	CXPStyleButtonST	m_btnOrgName;
-	CXPStyleButtonST	m_btnDataDelete;
-	CXPStyleButtonST	m_btnDataReset;
-	CThemeHelperST		m_ThemeHelper;
-
+	// 버튼
+	CButton	m_btnRename;
+	CButton	m_btnOrgName;
+	CButton	m_btnDataDelete;
+	CButton	m_btnDataReset;
+	
+	// 시작 일련번호
+	int m_nStartNumber;
+	BOOL m_bStartNumber;
+	
 
 	// 멤버함수
-	afx_msg void OnEnChangeEditRename();		// 변경할 파일명 형식 처리
-	afx_msg void OnBnClickedButtonRename();		// 파일명 변경
-	afx_msg void OnBnClickedButtonOrgName();	// 최초의 파일명으로 복구
-	afx_msg void OnBnClickedButtonAllReset();	// 모든 데이터 초기화
-	afx_msg void OnBnClickedButtonDelete();		// 선택된 목록 제거
-	void RunRename(void);
+	afx_msg void OnEnChangeEditRename();	// 변경할 파일명 형식 처리
+	afx_msg void OnBtnRename();				// 파일명 변경
+	afx_msg void OnBtnOrgName();			// 최초의 파일명으로 복구
+	afx_msg void OnBtnAllReset();			// 모든 데이터 초기화
+	afx_msg void OnBtnDelete();				// 선택된 목록 제거
+	afx_msg void OnDelete();				// 선택된 목록 제거
+	afx_msg void OnBnCheckStartNumber();	// 일련번호 시작번호 지정
+	afx_msg void OnEnChangeEditStartNumber();
 	afx_msg void OnNMRclickListRenamer(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnDelete();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	void RunRename(void);					// 파일명 변경실행
 };

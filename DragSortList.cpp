@@ -3,37 +3,39 @@
 
 #include "stdafx.h"
 #include "Renamer.h"
-#include "DragList.h"
-#include ".\draglist.h"
+#include "DragSortList.h"
+#include ".\dragsortlist.h"
 #include "RenamerDlg.h"
 
-// CDragList
+// CDragSortList
 
-IMPLEMENT_DYNAMIC(CDragList, CListCtrl)
-CDragList::CDragList()
+IMPLEMENT_DYNAMIC(CDragSortList, CListCtrl)
+CDragSortList::CDragSortList()
 : nDataCnt(0)
 , m_SmallImage(NULL)
+, m_bAscend(FALSE)
 {
 	m_SmallImage = new CImageList;
 }
 
-CDragList::~CDragList()
+CDragSortList::~CDragSortList()
 {
 	if(m_SmallImage != NULL)
 		delete m_SmallImage;
 }
 
 
-BEGIN_MESSAGE_MAP(CDragList, CListCtrl)
+BEGIN_MESSAGE_MAP(CDragSortList, CListCtrl)
 	ON_WM_DROPFILES()
+	ON_NOTIFY_REFLECT(LVN_COLUMNCLICK, &CDragSortList::OnLvnColumnclick)
 END_MESSAGE_MAP()
 
 
 
-// CDragList 메시지 처리기입니다.
+// CDragSortList 메시지 처리기입니다.
 
 
-void CDragList::OnDropFiles(HDROP hDropInfo)
+void CDragSortList::OnDropFiles(HDROP hDropInfo)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	CHAR		szPath[1024];		// Drag & Drop 된 파일 경로
@@ -45,7 +47,6 @@ void CDragList::OnDropFiles(HDROP hDropInfo)
 	SHFILEINFO	shFileInfo;			// 파일 정보
 	CRenamerDlg* pDlg = (CRenamerDlg*)AfxGetMainWnd();	// 메인 다이얼로그 포인터 얻기
 
-	
 	// Drag & Drop 된 파일 정보 얻기
 	uiFileNum = DragQueryFile(hDropInfo, 0xffffffff, NULL, 0);
 	
@@ -58,7 +59,8 @@ void CDragList::OnDropFiles(HDROP hDropInfo)
 
 	
 	// 얻어온 파일 정보 리스트 컨트롤에 추가
-	for( UINT i = 0 ; i < uiFileNum ; i++ )
+	UINT i = 0 ;
+	for(i = 0 ; i < uiFileNum ; i++ )
 	{
 		// 순차적으로 파일경로 얻기
 		DragQueryFile(hDropInfo, i, (LPTSTR)szPath, 1023);
@@ -101,11 +103,11 @@ void CDragList::OnDropFiles(HDROP hDropInfo)
 				SetItem(nDataCnt, 1, LVIF_TEXT, m_fileFinder.GetRoot(), NULL, NULL, NULL, NULL);
 				SetItem(nDataCnt, 2, LVIF_TEXT | LVIF_IMAGE, shFileInfo.szDisplayName, shFileInfo.iIcon, NULL, NULL, NULL);
 				SetItem(nDataCnt, 3, LVIF_TEXT, shFileInfo.szDisplayName, shFileInfo.iIcon, NULL, NULL, NULL);
+				// SetItemData(nDataCnt, nDataCnt);
 				nDataCnt++;
 
 				// 진행률 표시				
 				pDlg->m_prgsTime.SetPos(i);
-				Sleep(10);
 
 				m_SmallImage->Detach();
 
@@ -133,4 +135,54 @@ void CDragList::OnDropFiles(HDROP hDropInfo)
 	SetCursor(LoadCursor(NULL, IDC_ARROW));
 
 	CListCtrl::OnDropFiles(hDropInfo);
+}
+
+void CDragSortList::OnLvnColumnclick(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// 리스트뷰 칼럼 클릭할 때 데이터 정렬
+
+	// 클릭한 칼럼의 인덱스
+	int nColumn = pNMLV->iSubItem;
+
+	// 현재 리스트 컨트롤에 있는 데이터 총 자료 개수만큼 저장
+	for(int i=0; i<GetItemCount(); i++)
+	{
+		SetItemData(i, i);
+	}
+
+	// 정렬 방식 지정(Ascend, Descend)
+	m_bAscend = !m_bAscend;
+
+	// 정렬 관련된 구조체 변수 생성 및 데이터 초기화
+	SORT_PARAMS sort_params;
+	sort_params.hWnd = GetSafeHwnd();
+	sort_params.nCol = nColumn;
+	sort_params.bAscend = m_bAscend;
+
+	// 정렬 함수 호출
+	SortItems(&SortFunc, (LPARAM)&sort_params );
+
+	*pResult = 0;
+}
+
+int CALLBACK CDragSortList::SortFunc(LPARAM lParam1 , LPARAM lParam2 , LPARAM lParamSort)
+{
+	SORT_PARAMS *pSortParams = (SORT_PARAMS *)lParamSort;
+
+	CListCtrl *pListCtrl = (CListCtrl *)CWnd::FromHandle(pSortParams->hWnd);
+	BOOL bAscend = pSortParams->bAscend;
+	int nCol = pSortParams->nCol;
+
+	CString strItem1 = pListCtrl->GetItemText((int)lParam1, nCol);
+	CString	strItem2 = pListCtrl->GetItemText((int)lParam2, nCol);
+
+	strItem1.MakeLower();
+	strItem2.MakeLower();
+
+	if(bAscend)
+		return strItem1.Compare(strItem2);
+	else
+		return strItem2.Compare(strItem1);
 }
